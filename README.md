@@ -87,4 +87,4 @@ docs/              API.md, DEPLOYMENT.md
 legacy-v1/         earlier Supabase-based prototype (no longer used)
 ```
 
-See [docs/API.md](docs/API.md) for the REST API and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production, Docker and backups.
+See [docs/API.md](docs/API.md) for the REST API and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production, Docker, **Vercel + Cloudflare** (variables in [`.env.vercel.example`](.env.vercel.example)) and backups.

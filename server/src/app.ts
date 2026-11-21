@@ -27,7 +27,24 @@ export function createApp() {
       hsts: config.FORCE_HTTPS,
     }),
   );
+  if (config.TRUST_CLOUDFLARE) {
+    // Behind Cloudflare the connecting peer is a Cloudflare/edge IP; use the visitor IP it reports so
+    // rate limiting and audit logs see real clients. Only enable when direct access is not possible.
+    const ipv4 = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6 = /^[0-9a-f:]+$/i;
+    app.use((req, _res, next) => {
+      const cf = req.headers['cf-connecting-ip'];
+      const ip = Array.isArray(cf) ? cf[0] : cf;
+      if (ip && (ipv4.test(ip) || (ip.includes(':') && ipv6.test(ip)))) req.headers['x-forwarded-for'] = ip;
+      next();
+    });
+  }
   app.use(cors({ origin: config.clientOrigins, credentials: true }));
+  // API responses can be user-specific: tell Cloudflare / browsers never to cache them.
+  app.use('/api', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   if (config.NODE_ENV !== 'test') app.use(morgan(config.isProd ? 'combined' : 'dev'));
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());

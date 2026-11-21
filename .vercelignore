@@ -1,0 +1,7 @@
+legacy-v1
+server/.pgdata
+server/backups
+.env
+.env.*
+!.env.example
+!.env.vercel.example

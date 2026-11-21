@@ -10,6 +10,8 @@ const schema = z.object({
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   /** Set true when served over HTTPS (enables HSTS, secure cookies, upgrade-insecure-requests). */
   FORCE_HTTPS: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+  /** Set true only when ALL traffic reaches the app through Cloudflare: the real client IP is then read from CF-Connecting-IP. */
+  TRUST_CLOUDFLARE: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   MAX_UPLOAD_MB: z.coerce.number().positive().default(5),
   MAX_IMPORT_ROWS: z.coerce.number().int().positive().default(20000),
 });
