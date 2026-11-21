@@ -1,0 +1,254 @@
+// Drawlytics – Global Lottery Tracker
+// PostgreSQL schema. Searchable fields are relational; flexible structures
+// (lottery rules, number combinations, formula configs) are JSONB.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DrawFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DrawStatus {
+  PENDING
+  PUBLISHED
+}
+
+enum PerformanceStatus {
+  PENDING
+  EVALUATED
+}
+
+enum UploadStatus {
+  COMPLETED
+  PARTIAL
+  FAILED
+  REJECTED
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  name         String     @db.VarChar(120)
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash")
+  role         Role       @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  draws       LotteryDraw[]
+  formulas    PredictionFormula[]
+  predictions Prediction[]
+  uploads     BulkUpload[]
+  auditLogs   AuditLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model Country {
+  id          String  @id @default(uuid()) @db.Uuid
+  countryName String  @unique @map("country_name") @db.VarChar(120)
+  countryCode String  @unique @map("country_code") @db.VarChar(3)
+  currency    String? @db.VarChar(8)
+  timezone    String  @db.VarChar(64)
+
+  lotteries Lottery[]
+
+  @@map("countries")
+}
+
+model LotteryCategory {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique @db.VarChar(80)
+  description String?
+
+  lotteries Lottery[]
+
+  @@map("lottery_categories")
+}
+
+model Lottery {
+  id           String        @id @default(uuid()) @db.Uuid
+  countryId    String        @map("country_id") @db.Uuid
+  categoryId   String?       @map("category_id") @db.Uuid
+  lotteryName  String        @map("lottery_name") @db.VarChar(160)
+  stateRegion  String?       @map("state_region") @db.VarChar(120)
+  provider     String        @db.VarChar(160)
+  currency     String?       @db.VarChar(8)
+  description  String?
+  websiteUrl   String?       @map("website_url")
+  drawFrequency DrawFrequency @default(WEEKLY) @map("draw_frequency")
+  /// weekdays 0 (Sunday) – 6 (Saturday)
+  drawDays     Int[]         @default([]) @map("draw_days")
+  drawTime     String?       @map("draw_time") @db.VarChar(5)
+  timezone     String        @db.VarChar(64)
+  /// { mainCount, minNumber, maxNumber, allowDuplicates, ordered, bonus: {count,minNumber,maxNumber,allowDuplicates,separatePool} | null, format }
+  rulesJson    Json          @map("rules_json")
+  status       RecordStatus  @default(ACTIVE)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  country     Country            @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  category    LotteryCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  draws       LotteryDraw[]
+  formulas    PredictionFormula[]
+  predictions Prediction[]
+  uploads     BulkUpload[]
+
+  @@unique([countryId, lotteryName])
+  @@index([countryId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([provider])
+  @@map("lotteries")
+}
+
+model LotteryDraw {
+  id            String     @id @default(uuid()) @db.Uuid
+  lotteryId     String     @map("lottery_id") @db.Uuid
+  drawDate      DateTime   @map("draw_date") @db.Date
+  drawReference String?    @map("draw_reference") @db.VarChar(64)
+  mainNumbers   Json       @map("main_numbers")
+  bonusNumbers  Json       @default("[]") @map("bonus_numbers")
+  status        DrawStatus @default(PUBLISHED)
+  remarks       String?
+  /// true for demo data created by the seed script – never real results
+  isSample      Boolean    @default(false) @map("is_sample")
+  createdById   String?    @map("created_by") @db.Uuid
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  lottery     Lottery      @relation(fields: [lotteryId], references: [id], onDelete: Cascade)
+  createdBy   User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  evaluations Prediction[] @relation("EvaluatedAgainst")
+
+  @@unique([lotteryId, drawDate])
+  @@unique([lotteryId, drawReference])
+  @@index([lotteryId, drawDate(sort: Desc)])
+  @@index([status])
+  @@index([drawDate])
+  @@map("lottery_draws")
+}
+
+model PredictionAlgorithm {
+  id            String       @id @default(uuid()) @db.Uuid
+  algorithmName String       @map("algorithm_name") @db.VarChar(120)
+  description   String
+  /// Engine key: LONG_TERM_FREQUENCY, RECENT_FREQUENCY, ...
+  algorithmType String       @unique @map("algorithm_type") @db.VarChar(40)
+  status        RecordStatus @default(ACTIVE)
+
+  @@map("prediction_algorithms")
+}
+
+model PredictionFormula {
+  id            String   @id @default(uuid()) @db.Uuid
+  lotteryId     String   @map("lottery_id") @db.Uuid
+  formulaName   String   @map("formula_name") @db.VarChar(120)
+  formulaConfig Json     @map("formula_config")
+  version       Int      @default(1)
+  isActive      Boolean  @default(false) @map("is_active")
+  createdById   String?  @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  lottery     Lottery      @relation(fields: [lotteryId], references: [id], onDelete: Cascade)
+  createdBy   User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  predictions Prediction[]
+
+  @@unique([lotteryId, formulaName, version])
+  @@index([lotteryId, isActive])
+  @@map("prediction_formulas")
+}
+
+model Prediction {
+  id                String            @id @default(uuid()) @db.Uuid
+  referenceId       String            @unique @map("reference_id") @db.VarChar(32)
+  lotteryId         String            @map("lottery_id") @db.Uuid
+  formulaId         String?           @map("formula_id") @db.Uuid
+  userId            String?           @map("user_id") @db.Uuid
+  suggestedNumbers  Json              @map("suggested_numbers")
+  bonusNumbers      Json              @default("[]") @map("bonus_numbers")
+  analysisPeriod    String            @map("analysis_period") @db.VarChar(60)
+  targetDrawDate    DateTime?         @map("target_draw_date") @db.Date
+  generatedAt       DateTime          @default(now()) @map("generated_at")
+  evaluatedAt       DateTime?         @map("evaluated_at")
+  evaluatedDrawId   String?           @map("evaluated_draw_id") @db.Uuid
+  matchedNumbers    Int?              @map("matched_numbers")
+  matchedBonus      Int?              @map("matched_bonus")
+  performanceStatus PerformanceStatus @default(PENDING) @map("performance_status")
+
+  lottery       Lottery            @relation(fields: [lotteryId], references: [id], onDelete: Cascade)
+  formula       PredictionFormula? @relation(fields: [formulaId], references: [id], onDelete: SetNull)
+  user          User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  evaluatedDraw LotteryDraw?       @relation("EvaluatedAgainst", fields: [evaluatedDrawId], references: [id], onDelete: SetNull)
+
+  @@index([lotteryId, performanceStatus])
+  @@index([userId, generatedAt(sort: Desc)])
+  @@index([formulaId])
+  @@map("predictions")
+}
+
+model BulkUpload {
+  id                String       @id @default(uuid()) @db.Uuid
+  lotteryId         String       @map("lottery_id") @db.Uuid
+  fileName          String       @map("file_name") @db.VarChar(255)
+  totalRecords      Int          @map("total_records")
+  successfulRecords Int          @map("successful_records")
+  failedRecords     Int          @map("failed_records")
+  /// created / updated / skipped counters and the duplicate policy used
+  summary           Json?
+  /// row-level errors for the downloadable error report
+  errorReport       Json?        @map("error_report")
+  uploadStatus      UploadStatus @map("upload_status")
+  uploadedById      String?      @map("uploaded_by") @db.Uuid
+  uploadedAt        DateTime     @default(now()) @map("uploaded_at")
+
+  lottery    Lottery @relation(fields: [lotteryId], references: [id], onDelete: Cascade)
+  uploadedBy User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([lotteryId])
+  @@index([uploadedAt(sort: Desc)])
+  @@map("bulk_uploads")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(40)
+  entityType String   @map("entity_type") @db.VarChar(60)
+  entityId   String?  @map("entity_id") @db.VarChar(64)
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("audit_logs")
+}

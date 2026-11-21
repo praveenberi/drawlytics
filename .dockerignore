@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+server/.pgdata
+server/backups
+server/.env
+legacy-v1
+.git
+.claude

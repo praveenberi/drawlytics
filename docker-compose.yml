@@ -1,0 +1,38 @@
+# Local / single-host deployment:  docker compose up --build
+# Then seed once:                  docker compose run --rm app npx tsx prisma/seed.ts
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: drawlytics
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-drawlytics}
+      POSTGRES_DB: drawlytics
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U drawlytics -d drawlytics']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://drawlytics:${POSTGRES_PASSWORD:-drawlytics}@db:5432/drawlytics?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (>= 32 random characters) in your shell or a .env file next to docker-compose.yml}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@drawlytics.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD}
+      SEED_SAMPLE_DRAWS: ${SEED_SAMPLE_DRAWS:-true}
+      FORCE_HTTPS: ${FORCE_HTTPS:-false}
+
+volumes:
+  pgdata:

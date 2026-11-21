@@ -1,0 +1,17 @@
+{
+  "name": "drawlytics",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Drawlytics – Global Lottery Tracker (React + Express + PostgreSQL/Prisma)",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "db:embedded": "npm --prefix server run db:embedded",
+    "db:migrate": "npm --prefix server run migrate:deploy",
+    "db:seed": "npm --prefix server run db:seed",
+    "build": "npm --prefix client run build && npm --prefix server run build",
+    "start": "npm --prefix server run start",
+    "test:api": "npm --prefix server run test:api"
+  }
+}

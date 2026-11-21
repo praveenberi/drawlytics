@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 20% 98%;
+    --foreground: 222 30% 12%;
+    --card: 0 0% 100%;
+    --muted: 150 14% 95%;
+    --muted-foreground: 215 14% 38%;
+    --border: 150 12% 88%;
+    --primary: 152 62% 31%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 90% 95%;
+    --secondary-foreground: 217 75% 32%;
+    --accent: 217 85% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 46%;
+    --ring: 152 62% 31%;
+    --chart-1: 152 55% 36%;
+    --chart-2: 217 85% 52%;
+    --chart-3: 38 90% 48%;
+    --ball-main: 152 62% 31%;
+    --ball-bonus: 217 85% 50%;
+  }
+  .dark {
+    --background: 222 28% 8%;
+    --foreground: 150 10% 94%;
+    --card: 222 26% 11%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 215 14% 68%;
+    --border: 222 18% 22%;
+    --primary: 152 55% 42%;
+    --primary-foreground: 222 28% 6%;
+    --secondary: 217 40% 20%;
+    --secondary-foreground: 214 90% 85%;
+    --accent: 217 85% 62%;
+    --accent-foreground: 222 28% 6%;
+    --destructive: 0 70% 56%;
+    --ring: 152 55% 42%;
+    --chart-1: 152 55% 48%;
+    --chart-2: 217 90% 66%;
+    --chart-3: 38 90% 58%;
+    --ball-main: 152 55% 38%;
+    --ball-bonus: 217 85% 56%;
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: Inter, ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  aside,
+  header.app-header {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print-break {
+    break-inside: avoid;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
+.print-only {
+  display: none;
+}
