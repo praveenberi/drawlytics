@@ -6,3 +6,8 @@ dist
 server/.pgdata
 server/backups
 .claude/settings.local.json
+
+# local env files (keep example files tracked)
+.env.*
+!.env.example
+!.env.vercel.example
