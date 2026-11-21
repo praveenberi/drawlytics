@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm run install:all",
+  "installCommand": "npm --prefix server install --include=dev && npm --prefix client install --include=dev",
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "client/dist",
   "functions": {
