@@ -10,6 +10,7 @@
     "db:embedded": "npm --prefix server run db:embedded",
     "db:migrate": "npm --prefix server run migrate:deploy",
     "db:seed": "npm --prefix server run db:seed",
+    "admin:reset": "npm --prefix server run admin:reset",
     "build": "npm --prefix client run build && npm --prefix server run build",
     "start": "npm --prefix server run start",
     "test:api": "npm --prefix server run test:api"

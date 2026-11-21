@@ -12,6 +12,7 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "admin:reset": "tsx scripts/reset-admin.ts",
     "db:backup": "tsx scripts/backup.ts",
     "db:embedded": "tsx scripts/embedded-db.ts",
     "test:api": "tsx test/smoke.ts"
