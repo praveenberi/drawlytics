@@ -7,7 +7,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 30,
-      "includeFiles": "{server/dist/**,server/node_modules/.prisma/client/**}"
+      "includeFiles": "{server/package.json,server/dist/**,server/node_modules/.prisma/client/**}"
     }
   },
   "rewrites": [
